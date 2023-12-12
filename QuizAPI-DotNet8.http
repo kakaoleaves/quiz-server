@@ -1,0 +1,11 @@
+@QuizAPI-DotNet8_HostAddress = https://localhost:7118
+@QuizAPI_DotNet8_HostAddress = http://localhost:5152
+
+GET {{QuizAPI_DotNet8_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+
+GET {{QuizAPI-DotNet8_HostAddress}}/weatherforecast
+
+###
