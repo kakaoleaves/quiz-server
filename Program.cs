@@ -1,7 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using QuizAPI_DotNet8.Data;
 
+var policyName = "CorsPolicy";
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(policyName, policy =>
+    {
+        policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:3000", "http://localhost:8080");
+    });
+});
 
 // Add services to the container.
 
@@ -25,6 +35,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.UseCors(policyName);
 
 app.UseAuthorization();
 
