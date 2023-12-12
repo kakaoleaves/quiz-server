@@ -19,8 +19,95 @@ namespace QuizAPI_DotNet8.Controllers
         [HttpGet]
         public async Task<ActionResult<List<User>>> GetUsers()
         {
-            var users = await _context.Users.ToListAsync();
-            return Ok(users);
+            var dbUsers = await _context.Users.ToListAsync();
+
+            return Ok(dbUsers);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> GetUser(int id)
+        {
+            var dbUser = await _context.Users.FindAsync(id);
+            if (dbUser is null)
+            {
+                return NotFound("user not found.");
+            }
+
+            return Ok(dbUser);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<User>> CreateUser(User user)
+        {
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(user);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<User>> UpdateUser(int id, User updatedUser)
+        {
+            var dbUser = await _context.Users.FindAsync(id);
+            if (dbUser is null)
+            {
+                return NotFound("user not found.");
+            }
+
+            dbUser.Username = updatedUser.Username;
+            dbUser.Password = updatedUser.Password;
+            dbUser.IsAdmin = updatedUser.IsAdmin;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(dbUser);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<User>> DeleteUser(int id)
+        {
+            var dbUser = await _context.Users.FindAsync(id);
+            if (dbUser is null)
+            {
+                return NotFound("user not found.");
+            }
+
+            _context.Users.Remove(dbUser);
+            await _context.SaveChangesAsync();
+
+            return Ok(dbUser);
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<User>> Login(string username, string password)
+        {
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (dbUser == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            if (dbUser.Password != password)
+            {
+                return BadRequest("Invalid password.");
+            }
+
+            return Ok(dbUser);
+        }
+
+        [HttpPost("register")]
+        public async Task<ActionResult<User>> Register(User user)
+        {
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username);
+            if (dbUser is not null)
+            {
+                return BadRequest("username already exists.");
+            }
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(user);
         }
     }
 }

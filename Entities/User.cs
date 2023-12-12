@@ -2,9 +2,9 @@
 {
     public class User
     {
-        public int userId { get; set; } // primary key
-        public required string username { get; set; }
-        public required string password { get; set; }
-        public required bool isAdmin { get; set; }
+        public int UserId { get; set; } // primary key
+        public required string Username { get; set; }
+        public required string Password { get; set; }
+        public required bool IsAdmin { get; set; }
     }
 }
