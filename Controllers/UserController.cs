@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuizAPI_DotNet8.Data;
 using QuizAPI_DotNet8.Entities;
+using QuizAPI_DotNet8.Models;
 
 namespace QuizAPI_DotNet8.Controllers
 {
@@ -37,8 +38,15 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(User user)
+        public async Task<ActionResult<User>> CreateUser(UserViewModel model)
         {
+            var user = new User
+            {
+                Username = model.Username,
+                Password = model.Password,
+                IsAdmin = false
+            };
+
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
@@ -79,25 +87,40 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(string username, string password)
+        public async Task<ActionResult<User>> Login(UserViewModel model)
         {
-            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (dbUser == null)
+            if (ModelState.IsValid is false)
             {
-                return NotFound("User not found.");
+                return BadRequest(ModelState);
             }
 
-            if (dbUser.Password != password)
+            var username = model.Username;
+            var password = model.Password;
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (dbUser == null || dbUser.Password != password)
             {
-                return BadRequest("Invalid password.");
+                return NotFound("User not found");
             }
 
             return Ok(dbUser);
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(User user)
+        public async Task<ActionResult<User>> Register(UserViewModel model)
         {
+            if (ModelState.IsValid is false)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = new User
+            {
+                Username = model.Username,
+                Password = model.Password,
+                IsAdmin = false
+            };
+
             var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == user.Username);
             if (dbUser is not null)
             {
