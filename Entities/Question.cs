@@ -17,6 +17,7 @@ namespace QuizAPI_DotNet8.Entities
         // Navigation properties
         public virtual ICollection<Choice> Choices { get; set; }
         public virtual ICollection<UserAnswer> UserAnswers { get; set; }
+        [ForeignKey("CreatedBy")]
         public virtual User Creator { get; set; }
     }
 }

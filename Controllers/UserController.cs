@@ -38,7 +38,7 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(UserViewModel model)
+        public async Task<ActionResult<User>> CreateUser(UserLoginDto model)
         {
             var user = new User
             {
@@ -87,7 +87,7 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(UserViewModel model)
+        public async Task<ActionResult<User>> Login(UserLoginDto model)
         {
             if (ModelState.IsValid is false)
             {
@@ -107,7 +107,7 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserViewModel model)
+        public async Task<ActionResult<User>> Register(UserLoginDto model)
         {
             if (ModelState.IsValid is false)
             {
