@@ -1,10 +1,21 @@
-﻿namespace QuizAPI_DotNet8.Entities
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace QuizAPI_DotNet8.Entities
 {
     public class Choice
     {
-        public int ChoiceId { get; set; } // primary key
-        public required int QuestionId { get; set; } // foreign key
-        public required string Content { get; set; }
-        public required bool IsCorrect { get; set; }
+        [Key]
+        public int ChoiceId { get; set; }
+        [Required]
+        public int QuestionId { get; set; }
+        [Required]
+        public string Content { get; set; }
+        [Required]
+        public bool IsCorrect { get; set; }
+
+        // Navigation properties
+        public virtual Question Question { get; set; }
+        public virtual ICollection<UserAnswer> UserAnswers { get; set; }
     }
 }

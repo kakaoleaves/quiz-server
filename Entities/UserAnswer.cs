@@ -1,11 +1,24 @@
-﻿namespace QuizAPI_DotNet8.Entities
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace QuizAPI_DotNet8.Entities
 {
     public class UserAnswer
     {
-        public int UserAnswerId { get; set; } // primary key
-        public required int UserId { get; set; } // foreign key
-        public required int QuestionId { get; set; } // foreign key
-        public required int ChoiceId { get; set; } // foreign key
+        [Key]
+        public int UserAnswerId { get; set; }
+        [Required]
+        public int UserId { get; set; }
+        [Required]
+        public int QuestionId { get; set; }
+        [Required]
+        public int ChoiceId { get; set; }
+        [Required]
         public required DateOnly DateAnswered { get; set; }
+
+        // Navigation properties
+        public virtual User User { get; set; }
+        public virtual Question Question { get; set; }        
+        public virtual Choice Choice { get; set; }
     }
 }
