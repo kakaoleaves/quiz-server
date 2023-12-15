@@ -54,7 +54,7 @@ namespace QuizAPI_DotNet8.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<User>> UpdateUser(int id, User updatedUser)
+        public async Task<ActionResult<User>> UpdateUser(int id, UserLoginDto model)
         {
             var dbUser = await _context.Users.FindAsync(id);
             if (dbUser is null)
@@ -62,10 +62,8 @@ namespace QuizAPI_DotNet8.Controllers
                 return NotFound("user not found.");
             }
 
-            dbUser.Username = updatedUser.Username;
-            dbUser.Password = updatedUser.Password;
-            dbUser.IsAdmin = updatedUser.IsAdmin;
-
+            dbUser.Username = model.Username;
+            dbUser.Password = model.Password;
             await _context.SaveChangesAsync();
 
             return Ok(dbUser);
