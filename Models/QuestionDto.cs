@@ -15,4 +15,10 @@
         public DateOnly DateCreated { get; set; }
         public UserSummaryDto Creator { get; set; }
     }
+
+    public class PutQuestionDto
+    {
+        public string Content { get; set; }
+        public List<ChoiceDto> Choices { get; set; }
+    }
 }

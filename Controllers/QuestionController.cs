@@ -66,9 +66,9 @@ namespace QuizAPI_DotNet8.Controllers
                 return BadRequest(ModelState);
             }
 
-            if (dto.Choices.Count < 2)
+            if (dto.Choices.Count != 4)
             {
-                return BadRequest("question must have at least 2 choices.");
+                return BadRequest("question must have exactly 4 choices.");
             }
 
             if (dto.Choices.Count(c => c.IsCorrect) != 1)
@@ -145,6 +145,112 @@ namespace QuizAPI_DotNet8.Controllers
             };
 
             return CreatedAtAction(nameof(GetQuestion), new { id = dbQuestion.QuestionId }, questionDto);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<Question>> PutQuestion(int id, PutQuestionDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (dto.Choices.Count != 4)
+            {
+                return BadRequest("question must have exactly 4 choices.");
+            }
+
+            if (dto.Choices.Count(c => c.IsCorrect) != 1)
+            {
+                return BadRequest("question must have exactly 1 correct choice.");
+            }
+
+            if (dto.Choices.Any(c => string.IsNullOrWhiteSpace(c.Content)))
+            {
+                return BadRequest("choice content cannot be empty.");
+            }
+
+            if (dto.Choices.Any(c => c.Content.Length > 100))
+            {
+                return BadRequest("choice content cannot be longer than 100 characters.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Content))
+            {
+                return BadRequest("question content cannot be empty.");
+            }
+
+            if (dto.Content.Length > 100)
+            {
+                return BadRequest("question content cannot be longer than 100 characters.");
+            }
+
+            var dbQuestion = await _context.Questions
+                .Include(q => q.Choices)
+                .FirstOrDefaultAsync(q => q.QuestionId == id);
+
+            if (dbQuestion is null)
+            {
+                return NotFound("question not found.");
+            }
+
+            dbQuestion.Content = dto.Content;
+
+            foreach (var choice in dbQuestion.Choices)
+            {
+                var newChoice = dto.Choices.FirstOrDefault(c => c.ChoiceId == choice.ChoiceId);
+                if (newChoice is null)
+                {
+                    return BadRequest("choice not found.");
+                }
+
+                choice.Content = newChoice.Content;
+                choice.IsCorrect = newChoice.IsCorrect;
+            }
+
+            await _context.SaveChangesAsync();
+
+            var dbQuestionCreator = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dbQuestion.CreatedBy);
+
+            if (dbQuestionCreator is null)
+            {
+                   return BadRequest("question creator not found.");
+            }
+
+            var updatedDbQuestion = new GetQuestionDto
+            {
+                QuestionId = dbQuestion.QuestionId,
+                Content = dbQuestion.Content,
+                Choices = dbQuestion.Choices.Select(c => new ChoiceDto
+                {
+                    ChoiceId = c.ChoiceId,
+                    Content = c.Content,
+                    IsCorrect = c.IsCorrect
+                }).ToList(),
+                DateCreated = dbQuestion.DateCreated,
+                Creator = new UserSummaryDto
+                {
+                    UserId = dbQuestionCreator.UserId,
+                    Username = dbQuestionCreator.Username,
+                }
+            };
+
+            return Ok(updatedDbQuestion);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<Question>> DeleteQuestion(int id)
+        {
+            var dbQuestion = await _context.Questions.FindAsync(id);
+            if (dbQuestion is null)
+            {
+                return NotFound("question not found.");
+            }
+
+            _context.Questions.Remove(dbQuestion);
+            await _context.SaveChangesAsync();
+
+            return Ok(dbQuestion);
         }
     }
 }
