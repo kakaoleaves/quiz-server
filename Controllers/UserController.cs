@@ -40,6 +40,16 @@ namespace QuizAPI_DotNet8.Controllers
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser(UserLoginDto model)
         {
+            if (ModelState.IsValid is false)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (await _context.Users.AnyAsync(u => u.Username == model.Username))
+            {
+                return BadRequest("username already exists.");
+            }
+
             var user = new User
             {
                 Username = model.Username,
@@ -62,8 +72,19 @@ namespace QuizAPI_DotNet8.Controllers
                 return NotFound("user not found.");
             }
 
+            if (ModelState.IsValid is false)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (await _context.Users.AnyAsync(u => u.Username == model.Username && u.UserId != id))
+            {
+                return BadRequest("username already exists.");
+            }
+
             dbUser.Username = model.Username;
             dbUser.Password = model.Password;
+
             await _context.SaveChangesAsync();
 
             return Ok(dbUser);
@@ -79,6 +100,7 @@ namespace QuizAPI_DotNet8.Controllers
             }
 
             _context.Users.Remove(dbUser);
+
             await _context.SaveChangesAsync();
 
             return Ok(dbUser);

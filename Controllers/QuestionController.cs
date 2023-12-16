@@ -208,6 +208,29 @@ namespace QuizAPI_DotNet8.Controllers
                 choice.IsCorrect = newChoice.IsCorrect;
             }
 
+            _context.Questions.Update(dbQuestion);
+
+            // USER ANSEWR UPDATE
+            var userAnswers = await _context.UserAnswers
+                .Where(ua => ua.QuestionId == id)
+                .ToListAsync();
+
+            if (userAnswers.Any())
+            {
+                foreach (var userAnswer in userAnswers)
+                {
+                    var choice = dbQuestion.Choices.FirstOrDefault(c => c.ChoiceId == userAnswer.ChoiceId);
+                    if (choice is null)
+                    {
+                        return BadRequest("choice not found.");
+                    }
+
+                    userAnswer.IsCorrect = choice.IsCorrect;
+                }
+
+                _context.UserAnswers.UpdateRange(userAnswers);
+            }
+
             await _context.SaveChangesAsync();
 
             var dbQuestionCreator = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dbQuestion.CreatedBy);
@@ -251,6 +274,137 @@ namespace QuizAPI_DotNet8.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(dbQuestion);
+        }
+
+        [HttpGet("user/{id}")]
+        public async Task<ActionResult<QuestionAnswerDto>> GetQuestionsWithUserAnswer(int id)
+        {
+            var userAnswers = await _context.UserAnswers
+                .Where(ua => ua.UserId == id)
+                .ToListAsync();
+
+            var dbQuestions = await _context.Questions
+                .Include(q => q.Choices)
+                .Include(q => q.Creator)
+                .ToListAsync();
+
+            var questionsWithAnswers = dbQuestions
+                .Select(q => new QuestionAnswerDto
+                {
+                    QuestionId = q.QuestionId,
+                    Content = q.Content,
+                    Choices = q.Choices.Select(c => new ChoiceDto
+                    {
+                        ChoiceId = c.ChoiceId,
+                        Content = c.Content,
+                        IsCorrect = c.IsCorrect
+                    }).ToList(),
+                    DateCreated = q.DateCreated,
+                    Creator = new UserSummaryDto
+                    {
+                        UserId = q.Creator.UserId,
+                        Username = q.Creator.Username,
+                    },
+                    UserAnswer =
+                        userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId) is not null
+                            ? new UserAnswerDto
+                            {
+                                UserAnswerId = userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId)
+                                    .UserAnswerId,
+                                UserId = userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId).UserId,
+                                ChoiceId = userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId).ChoiceId,
+                                QuestionId = userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId)
+                                    .QuestionId,
+                                IsCorrect = userAnswers.FirstOrDefault(ua => ua.QuestionId == q.QuestionId).IsCorrect
+                            }
+                            : null
+                }).ToList();
+
+
+            return Ok(questionsWithAnswers);
+        }
+
+        [HttpGet("stats/{id}")]
+        public async Task<ActionResult<User>> GetQuizStats(int id)
+        {
+            // Total number of attempts
+            var totalAttempts = await _context.UserAnswers
+                .CountAsync(ua => ua.UserId == id);
+
+            // Total number of correct answers
+            var totalCorrectAnswers = await _context.UserAnswers
+                .CountAsync(ua => ua.UserId == id && ua.IsCorrect);
+
+            var stats = new QuizStatsDto
+            {
+                TotalAttempts = totalAttempts,
+                TotalCorrectAnswers = totalCorrectAnswers
+            };
+
+            return Ok(stats);
+        }
+
+        [HttpPost("answer")]
+        public async Task<ActionResult<UserAnswer>> AnswerQuestion(PostAnswerDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var dbQuestion = await _context.Questions
+                .Include(q => q.Choices)
+                .FirstOrDefaultAsync(q => q.QuestionId == dto.QuestionId);
+
+            if (dbQuestion is null)
+            {
+                return NotFound("question not found.");
+            }
+
+            var dbChoice = dbQuestion.Choices.FirstOrDefault(c => c.ChoiceId == dto.ChoiceId);
+
+            if (dbChoice is null)
+            {
+                return NotFound("choice not found.");
+            }
+
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.UserId);
+
+            if (dbUser is null)
+            {
+                return NotFound("user not found.");
+            }
+
+            var dbUserAnswer = await _context.UserAnswers
+                .FirstOrDefaultAsync(ua => ua.UserId == dto.UserId && ua.QuestionId == dto.QuestionId);
+
+            if (dbUserAnswer is not null)
+            {
+                return BadRequest("user has already answered this question.");
+            }
+
+            var newDbUserAnswer = new UserAnswer
+            {
+                UserId = dto.UserId,
+                ChoiceId = dto.ChoiceId,
+                QuestionId = dto.QuestionId,
+                IsCorrect = dbChoice.IsCorrect,
+                DateAnswered = DateOnly.FromDateTime(DateTime.Now)
+            };
+
+            _context.UserAnswers.Add(newDbUserAnswer);
+            await _context.SaveChangesAsync();
+
+            var dbUserAnswerDto = new UserAnswerDto
+            {
+                UserAnswerId = newDbUserAnswer.UserAnswerId,
+                UserId = newDbUserAnswer.UserId,
+                ChoiceId = newDbUserAnswer.ChoiceId,
+                QuestionId = newDbUserAnswer.QuestionId,
+                IsCorrect = newDbUserAnswer.IsCorrect
+            };
+
+            return Ok(dbUserAnswerDto);
         }
     }
 }

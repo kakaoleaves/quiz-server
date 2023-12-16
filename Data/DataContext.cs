@@ -41,7 +41,7 @@ namespace QuizAPI_DotNet8.Data
                 .HasMany(u => u.UserAnswers)
                 .WithOne(ua => ua.User)
                 .HasForeignKey(ua => ua.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

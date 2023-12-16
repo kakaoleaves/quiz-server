@@ -13,6 +13,8 @@ namespace QuizAPI_DotNet8.Entities
         [Required]
         public int ChoiceId { get; set; }
         [Required]
+        public required bool IsCorrect { get; set; }
+        [Required]
         public required DateOnly DateAnswered { get; set; }
 
         // Navigation properties
